@@ -1,0 +1,28 @@
+# --- Secretos ---
+# ¡CRÍTICO! Ignorar el archivo de variables de entorno (contiene la API key)
+.env
+
+# --- Datos Generados ---
+# Ignorar la carpeta de datos JSON descargados
+data/
+
+# Ignorar la carpeta de logs (cron.log, app.log)
+logs/
+
+# --- Datos de la Base de Datos ---
+# ¡CRÍTICO! Ignorar la carpeta de datos de PostgreSQL
+pgdata/
+
+# --- Archivos de Cache de Python ---
+__pycache__/
+*.pyc
+
+# --- Archivos del Editor (Buena práctica) ---
+.vscode/
+
+# Entorno virtual de Python
+venv/
+.venv/
+# archivos pkl
+
+*.pkl

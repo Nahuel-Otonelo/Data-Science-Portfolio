@@ -1,0 +1,10 @@
+borrador
+
+# Large model files
+*.h5
+*.weights.h5
+
+# Python cache and environments
+__pycache__/
+venv/
+.venv/

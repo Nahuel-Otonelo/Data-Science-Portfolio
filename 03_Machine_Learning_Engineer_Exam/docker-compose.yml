@@ -1,0 +1,55 @@
+services:
+  
+  # --- SERVICIO DE BASE DE DATOS (¡CON LA ZONA HORARIA CORREGIDA!) ---
+  db:
+    image: postgres:16
+    container_name: mutt_db_postgres
+    restart: always
+    
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass123 # Tu última contraseña
+      POSTGRES_DB: crypto_db
+      POSTGRES_HOST_AUTH_METHOD: md5 
+      
+      # Le decimos al *servidor* que use esta zona horaria
+      TZ: America/Argentina/Buenos_Aires
+      
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata-mutt-exam:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d crypto_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # --- SERVICIO DE LA APLICACIÓN (¡CON LAS VARIABLES DE BD AÑADIDAS!) ---
+  app:
+    container_name: mutt_app_python
+    build: .
+    command: /app/entrypoint.sh
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      
+    # Variables que se pasan al entrypoint.sh (leídas de tu .env)
+    environment:
+      - COINGECKO_API_KEY=${COINGECKO_API_KEY}
+      - TZ=America/Argentina/Buenos_Aires
+      
+      # --- ¡LA SOLUCIÓN! ---
+      # Estas son las variables que SÍ FALTABAN y que
+      # el script 'task_1_script.py' necesita para conectarse.
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=user
+      - DB_PASSWORD=pass123
+      - DB_NAME=crypto_db
+      
+volumes:
+  pgdata-mutt-exam:
