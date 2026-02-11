@@ -8,7 +8,6 @@ Repositorio con una colección de mis proyectos de Data Science, abarcando desde
 *   **03_Machine_Learning_Engineer_Exam**: Pruebas técnicas de MLE.
 *   **04_Proyecto_MLOps**: Despliegue y orquestación de modelos.
 *   **05_Proyectos_NLP**: Modelos de lenguaje y traducción.
-*   **06_Proyecto_Cloud**: En proceso.
-*   **07_Vision_por_Computadora_White_Patch**: Trabajo práctico de la materia VpC en la Carrera de especialización en IA.
-*   **08_Vision_por_Computadora_Analisis_Espectral** 
-*   **09_Vision_por_computadora_Deteccion_de_Objetos**
+*   **06_Vision_por_Computadora_White_Patch**: Trabajo práctico de la materia VpC en la Carrera de especialización en IA.
+*   **07_Vision_por_Computadora_Analisis_Espectral** 
+*   **08_Vision_por_computadora_Deteccion_de_Objetos**
