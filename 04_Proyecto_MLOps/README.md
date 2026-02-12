@@ -1,14 +1,15 @@
 # MLOps Final Project - Social Network Ads Pipeline
 
-Este proyecto implementa un pipeline de **MLOps end-to-end** para la predicción de compras de usuarios basadas en publicidad en redes sociales. El sistema está completamente contenerizado utilizando **Docker** y orquesta el ciclo de vida del machine learning desde la ingesta de datos hasta el registro del modelo.
+Este proyecto implementa un pipeline de **MLOps end-to-end** para la predicción de compras de usuarios basadas en publicidad en redes sociales. El sistema está completamente contenerizado utilizando **Docker** y orquesta el ciclo de vida del machine learning desde la ingesta de datos hasta el despliegue del modelo via API.
 
 ## 🏗️ Arquitectura del Proyecto
 
 El entorno simula una infraestructura productiva real utilizando los siguientes servicios:
 
 * **Apache Airflow:** Orquestador de flujos de trabajo (DAGs).
-* **MinIO:** Data Lake (Object Storage compatible con S3) para almacenar datasets y artefactos.
-* **MLflow:** Tracking server para el registro de experimentos, métricas y modelos.
+* **MinIO:** Data Lake (Object Storage compatible con S3) para almacenar datasets y el artefacto `scaler`.
+* **MLflow:** Tracking server para el registro de experimentos y gestión de modelos.
+* **FastAPI:** Microservicio REST para servir predicciones en tiempo real (Inferencia).
 * **PostgreSQL & Redis:** Backend y Broker para los servicios de orquestación.
 * **Docker Compose:** Gestión de infraestructura como código.
 
@@ -16,91 +17,100 @@ El entorno simula una infraestructura productiva real utilizando los siguientes 
 
 ## 🚀 Quick Start 
 
-Este proyecto está configurado para desplegarse automáticamente con un solo comando, incluyendo la instalación de librerías y la carga del dataset.
+Este proyecto utiliza variables de entorno para la gestión segura de credenciales.
 
 ### Prerrequisitos
-* Docker Desktop instalado y corriendo.
+1.  **Docker Desktop** instalado y corriendo.
+2.  Crear un archivo **`.env`** en la raíz del proyecto (ver sección Configuración).
 
 ### Ejecución
 1.  Clonar el repositorio.
-2.  Ejecutar el siguiente comando en la raíz del proyecto:
+2.  Ejecutar el siguiente comando en la raíz del proyecto para construir y levantar los servicios:
 
 ```bash
 docker compose --profile all up -d --build
 ```
-
 Esperar unos minutos a que los servicios indiquen estado healthy.
 
-Acceso a los Servicios
-Servicio	URL	Credenciales (User/Pass)
-Airflow	http://localhost:8080	airflow / airflow
-MinIO	http://localhost:9091	minio / minio123
-MLflow	http://localhost:5001	N/A
+### 🔌 Acceso a los Servicios
 
+| Servicio | URL | Credenciales (User/Pass) |
+| :--- | :--- | :--- |
+| **Airflow** | http://localhost:8080 | `airflow` / `airflow` |
+| **MinIO** | http://localhost:9091 | `minio` / `minio123` |
+| **MLflow** | http://localhost:5001 | N/A |
+| **FastAPI** (Docs) | http://localhost:8800/docs | N/A |
 
+### 🔐 Configuración y Seguridad (.env)
+
+El proyecto sigue buenas prácticas de DevSecOps, evitando credenciales hardcodeadas. Antes de iniciar, asegúrate de tener el archivo `.env` en la raíz con la siguiente configuración:
+
+```ini
+# Configuración Básica
+AIRFLOW_UID=50000
+MINIO_ACCESS_KEY=minio
+MINIO_SECRET_ACCESS_KEY=minio123
+DATA_REPO_BUCKET_NAME=data
+
+# Endpoints Internos
+MLFLOW_S3_ENDPOINT_URL=http://s3:9000
+```
 
 ## ⚙️ Flujo de Trabajo (Pipeline)
-El DAG mlops_final_project automatiza los siguientes pasos:
 
-1. Automatización de Infraestructura (docker-compose)
-Se construye una imagen de Airflow personalizada inyectando el archivo requirements.txt.
+El sistema automatiza el ciclo completo de MLOps:
 
-Un contenedor efímero (create_s3_buckets) inicializa los buckets en MinIO y carga automáticamente el dataset Social_Network_Ads.csv.
+1.  **Infraestructura (Docker Compose)**
+    *   Despliegue automático de servicios, creación de buckets en MinIO y carga inicial del dataset crudo.
+2.  **Preparación de Datos (Airflow: `data_prep.py`)**
+    *   **Ingesta:** Lee el archivo crudo desde MinIO.
+    *   **Limpieza:** Codifica variables categóricas (Gender).
+    *   **Split & Scaling:** Divide en Train/Test y aplica `StandardScaler`.
+    *   **Artefactos:** Guarda el `scaler.joblib` en MinIO (`artifacts/`) para asegurar consistencia en la inferencia.
+3.  **Entrenamiento y Selección (Airflow: `train.py`)**
+    *   Entrena modelos candidatos (Regresión Logística, Naive Bayes).
+    *   Registra métricas y parámetros en MLflow.
+    *   Selecciona el mejor modelo y lo registra en el Model Registry.
+4.  **Despliegue e Inferencia (FastAPI)**
+    *   El contenedor `fastapi_model_serving` expone el modelo seleccionado:
+        *   **Arranque Seguro:** Valida la existencia de variables de entorno críticas; si faltan, el servicio se detiene (Fail-fast).
+        *   **Carga de Artefactos:** Descarga el scaler desde MinIO y el modelo desde MLflow usando `boto3`.
+        *   **Validación de Input:** Normaliza entradas (e.g., "Male", "male", "MALE") y rechaza valores inválidos (Error 400).
+        *   **Endpoint:** `POST /predict` devuelve la predicción de compra.
 
-2. Preparación de Datos (src/data_prep.py)
-Ingesta: Lee el archivo crudo desde MinIO.
+## 🧪 Ejemplo de Uso (API)
 
-Limpieza: Elimina identificadores irrelevantes (User ID) y codifica variables categóricas (Gender).
+Puedes probar la API desde la interfaz Swagger UI o vía curl:
 
-Split: Divide el dataset en entrenamiento (80%) y prueba (20%).
+**Request (JSON):**
 
-Feature Scaling: Aplica StandardScaler solo a variables numéricas para evitar data leakage.
-
-Artefactos: Guarda el objeto scaler.joblib en MinIO para su uso posterior en inferencia y los datasets procesados (train_scaled.csv, test_scaled.csv).
-
-## 3. Entrenamiento y Selección (src/train.py)
-Entrena múltiples modelos candidatos:
-
-Regresión Logística.
-
-Naive Bayes (Gaussian).
-
-Evalúa el rendimiento utilizando métricas de Accuracy y F1-Score.
-
-Utiliza MLflow para registrar parámetros, métricas y el modelo serializado.
-
-Selecciona automáticamente el mejor modelo y lo promueve.
-
-El modelo ganador queda registrado en MLflow listo para ser consumido.
-
-## 🚧 Próximos Pasos (Roadmap)
-El avance actual cubre la infraestructura, orquestación y entrenamiento. Para completar el ciclo de vida de MLOps productivo, los siguientes pasos están pendientes de implementación:
-
-Despliegue de API (Serving):
-
-Implementar el servicio con FastAPI (dockerfiles/fastapi/app.py).
-
-Configurar el contenedor para descargar automáticamente el modelo "Champion" desde MLflow y el scaler desde MinIO al iniciarse.
-
-Exponer el endpoint POST /predict para recibir datos de nuevos usuarios.
-
-Monitoreo:
-
-Implementar logs de predicción para detectar Data Drift en el futuro.
-
-📂 Estructura del Repositorio
-Plaintext
+```json
+{
+  "Gender": "Female",
+  "Age": 45,
+  "EstimatedSalary": 90000
+}
 ```
+
+**Respuesta Esperada:**
+
+```json
+{
+  "prediction": 1,
+  "label": "COMPRA"
+}
+```
+
+## 📂 Estructura del Repositorio
+
+```plaintext
 .
-├── airflow/
-│   └── dags/
-│       └── pipeline.py      # Definición del DAG de Airflow
-├── dockerfiles/             # Definiciones de imágenes Docker
-├── src/
-│   ├── data_prep.py         # Lógica de ETL y preprocesamiento
-│   └── train.py             # Lógica de entrenamiento y MLflow
-├── Social_Network_Ads.csv   # Dataset original
+├── airflow/                 # DAGs y Configuración
+├── dockerfiles/             
+│   └── fastapi/             # Código de la API, Dockerfile y requirements
+├── src/                     # Lógica de ETL y Entrenamiento
+├── .env                     # Variables de entorno (No incluido en git)
+├── .dockerignore            # Optimización de build
 ├── docker-compose.yaml      # Orquestación de servicios
-├── requirements.txt         # Dependencias de Python
-└── README.md                # Documentación del proyecto
+└── README.md                # Documentación
 ```

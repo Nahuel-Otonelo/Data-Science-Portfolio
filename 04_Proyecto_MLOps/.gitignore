@@ -159,4 +159,4 @@ cython_debug/
 .DS_store
 
 # todos los notebooks
-# *.ipynb
+*.ipynb
