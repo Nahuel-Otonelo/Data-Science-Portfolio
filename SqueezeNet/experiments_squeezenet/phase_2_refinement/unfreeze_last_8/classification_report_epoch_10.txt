@@ -1,0 +1,20 @@
+                                       precision    recall  f1-score   support
+
+         Fringillidae_Serinus_serinus       0.70      0.73      0.71       155
+         Paridae_Hypocnemis_peruviana       0.91      0.29      0.44        34
+             Paridae_Saxicola_rubetra       0.83      0.81      0.82       409
+            Paridae_Saxicola_rubicola       0.70      0.73      0.72       213
+                           Sin_Pajaro       0.67      0.32      0.43        19
+      Troglodytidae_Troglodytes_aedon       0.68      0.71      0.69       252
+   Troglodytidae_Troglodytes_hiemalis       0.89      0.69      0.77        70
+  Troglodytidae_Troglodytes_pacificus       0.73      0.50      0.59        90
+Troglodytidae_Troglodytes_troglodytes       0.73      0.86      0.79       261
+    Turdidae_Catharus_aurantiirostris       0.61      0.74      0.67       154
+           Turdidae_Catharus_fuscater       0.87      0.84      0.86       171
+         Turdidae_Catharus_fuscescens       0.71      0.66      0.68        64
+           Turdidae_Catharus_guttatus       0.83      0.87      0.85       117
+          Turdidae_Catharus_ustulatus       0.46      0.33      0.39        57
+
+                             accuracy                           0.74      2066
+                            macro avg       0.74      0.65      0.67      2066
+                         weighted avg       0.75      0.74      0.74      2066

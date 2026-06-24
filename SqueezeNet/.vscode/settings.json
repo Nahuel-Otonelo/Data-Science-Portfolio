@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": "/Users/santiagocasado/Documents/AI/04 Bimestre/11 - Vision por Computadora II/SqueezeNet/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "jupyter.jupyterServerType": "local"
+}

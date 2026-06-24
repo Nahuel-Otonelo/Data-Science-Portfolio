@@ -1,0 +1,6 @@
+/.venv/
+/.ipython/
+/Dataset_Imagenes_Robustas/*
+!/Dataset_Imagenes_Robustas/.gitignore
+.DS_Store
+**/.DS_Store
